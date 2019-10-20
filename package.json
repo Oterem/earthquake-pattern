@@ -1,0 +1,70 @@
+{
+  "name": "earth-quake-pattern",
+  "version": "0.2.0",
+  "private": true,
+  "author": "Omri Terem",
+  "dependencies": {
+    "@material-ui/core": "^4.5.1",
+    "@material-ui/icons": "^4.5.1",
+    "concurrently": "^5.0.0",
+    "electron-is-dev": "^1.1.0",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "react": "^16.10.2",
+    "react-data-export": "^0.5.0",
+    "react-dom": "^16.10.2",
+    "react-excel-renderer": "^1.1.0",
+    "react-loading-overlay": "^1.0.1",
+    "react-scripts": "3.2.0",
+    "semantic-ui-react": "^0.88.1",
+    "wait-on": "^3.3.0"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron-pack": "electron-builder -c.extraMetadata.main=build/electron.js",
+    "preelectron-pack": "npm run build",
+    "electron-dev": "concurrently \"BROWSER=none npm run start\" \"wait-on http://localhost:3000 && electron .\""
+  },
+  "build": {
+    "appId": "EarthQuake-Pattern",
+    "productName": "EarthQuake-Pattern",
+    "copyright": "Copyright © 2019 Omri Terem",
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "main": "public/electron.js",
+  "homepage": "./"
+}
