@@ -56,6 +56,7 @@ export default () => {
   const [clusteredRows, setClusteredRows] = useState(0);
   const [unclusteredRows, setUnclusteredRows] = useState(0);
   const [unclusteredEvents, setUnclusteredEvents] = useState([]);
+  const [dataRowOffset, setDataRowOffset] = useState(2);
 
 
   function makeGroups () {
@@ -109,9 +110,6 @@ export default () => {
   }
 
   const excelDateToIsoString = (excelDate)=>{
-    console.log(excelDate);
-    console.log(typeof excelDate);
-
     if(typeof excelDate === 'string'){
       const a = moment(excelDate, ["DD-MM-YYYY","MM-DD-YYYY"]).toISOString()
       return a;
@@ -138,7 +136,7 @@ export default () => {
         setNumOfClusters(0);
         setShowClustersFilters(true);
         setShowStatistics(false);
-        resp.rows.shift();
+        resp.rows.splice(0,dataRowOffset-1);
         setTotalRows(resp.rows.length);
         const validRows = resp.rows.filter(row=>{
           return _.isArray(row) && !_.isEmpty(row);
@@ -222,8 +220,19 @@ export default () => {
         text={loadMessage}
         >
       <Paper>
-      {/*<Button variant="contained" color="primary" onClick={openFileBrowser} ><i className="cui-file"></i> Browse&hellip;</Button>*/}
-      <input type="file" onChange={fileHandler} ref={fileInput} onClick={(event)=> { event.target.value = null }} style={{"padding":"10px", height:70}} />
+        <div>
+          <TextField
+                                    id="outlined-number"
+                                    label="Data starts in row"
+                                    value={dataRowOffset}
+                                    onChange={(e)=>{setDataRowOffset(+e.target.value)}}
+                                    type="number"
+                                    margin="normal"
+                            />
+          <input type="file" onChange={fileHandler} ref={fileInput} onClick={(event)=> { event.target.value = null }} style={{"padding":"40px", height:70}} />
+
+        </div>
+
 
         <br/>
         <br/>

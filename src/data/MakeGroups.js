@@ -51,10 +51,8 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance) {
             let parsedLat = +lat;
             const upperBound = eventLat+parsedLat;
             const bottomBound = eventLat-parsedLat;
-            if((objLat > eventLat && objLat < upperBound) || (objLat < eventLat && objLat > bottomBound)){
-                return true;
-            }
-            return false;
+            return (objLat >= eventLat && objLat <= upperBound) || (objLat <= eventLat && objLat >= bottomBound);
+
         })
     }
 
@@ -65,7 +63,7 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance) {
             const parsedLaongitude = +long;
             const upperBound = eventLong+parsedLaongitude;
             const bottomBound = eventLong-parsedLaongitude;
-            return (objLong > eventLong && objLong < upperBound) || (objLong < eventLong && objLong > bottomBound);
+            return (objLong >= eventLong && objLong <= upperBound) || (objLong <= eventLong && objLong >= bottomBound);
         })
 
     }
@@ -77,7 +75,7 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance) {
             const parsedMag = +mag;
             const maxMagnitude = eventMag+parsedMag;
             const minMagnitude = eventMag-parsedMag;
-            return (objMag > eventMag && objMag < maxMagnitude) || (objMag < eventMag && objMag > minMagnitude);
+            return (objMag >= eventMag && objMag <= maxMagnitude) || (objMag <= eventMag && objMag >= minMagnitude);
         })
     }
 
