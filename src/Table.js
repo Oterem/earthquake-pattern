@@ -83,7 +83,7 @@ export default () => {
             });
             setUnclusteredEvents(unclustered);
             setClusteredRows(counter);
-            setUnclusteredRows(totalRows-counter);
+            setUnclusteredRows(unclustered.length);
             setNumOfClusters(clustered.length);
             resolve();
           })
@@ -137,10 +137,11 @@ export default () => {
         setShowClustersFilters(true);
         setShowStatistics(false);
         resp.rows.splice(0,dataRowOffset-1);
-        setTotalRows(resp.rows.length);
+
         const validRows = resp.rows.filter(row=>{
           return _.isArray(row) && !_.isEmpty(row);
-        })
+        });
+        setTotalRows(validRows.length);
         const transformedData = validRows.map(row=>{
           const excelTime = excelDateToJSDate(row[2]);
           const newDate = excelDateToIsoString(row[1]);
