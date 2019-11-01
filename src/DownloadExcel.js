@@ -58,7 +58,7 @@ export default ({fullData, buttonTitle,isClustered}) => {
             ],
             data:x
         }]);
-    },[]);
+    },[fullData]);
 
 
 

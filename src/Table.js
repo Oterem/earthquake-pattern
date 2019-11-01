@@ -39,7 +39,7 @@ export default () => {
 
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [magnitude, setMagnitude] = useState("");
+  const [magnitude, setMagnitude] = useState(0.5);
   const [cutOffDays, setCutOffDays] = useState(365);
   const [distanceThreshold, setDistanceThreshold] = useState(350);
   const [showStatistics, setShowStatistics] = useState(false);
@@ -59,6 +59,7 @@ export default () => {
   const [dataRowOffset, setDataRowOffset] = useState(2);
 
 
+
   function makeGroups () {
     if(!latitude && !longitude){
       alert('Insert at least one of: latitue or longitude');
@@ -70,6 +71,7 @@ export default () => {
       await a([...excelRows], latitude, longitude, magnitude, cutOffDays, distanceThreshold);
       setShowStatistics(true);
       setLoading(false);
+
     },50)
     const a = (arrayOfDate, latitude, longitude, magnitude, cutOffDays, distanceThreshold) =>{
           return new Promise(resolve => {
@@ -90,36 +92,64 @@ export default () => {
         }
   }
 
-  function formatGroup (data) {
-    const rows = [];
-    let countClustered = 0;
-    setNumOfClusters(data.length);
-    data.forEach(group=>{
-      countClustered += 1+group.children.length;
-      const parent = group.parent;
-      parent.ParentGroup = 0;
-      rows.push(parent);
-      group.children.reverse();
-      group.children && group.children.forEach(child=>{
-        child.ParentGroup = parent.eventid;
-        rows.push(child);
-      })
-    });
-
-    return rows;
-  }
+  // function formatGroup (data) {
+  //   const rows = [];
+  //   let countClustered = 0;
+  //   setNumOfClusters(data.length);
+  //   data.forEach(group=>{
+  //     countClustered += 1+group.children.length;
+  //     const parent = group.parent;
+  //     parent.ParentGroup = 0;
+  //     rows.push(parent);
+  //     group.children.reverse();
+  //     group.children && group.children.forEach(child=>{
+  //       child.ParentGroup = parent.eventid;
+  //       rows.push(child);
+  //     })
+  //   });
+  //
+  //   return rows;
+  // }
 
   const excelDateToIsoString = (excelDate)=>{
     if(typeof excelDate === 'string'){
-      const a = moment(excelDate, ["DD-MM-YYYY","MM-DD-YYYY"]).toISOString()
-      return a;
+      const a = moment(excelDate, ["DD-MM-YYYY","MM-DD-YYYY"]);
+      if(a.isValid()){
+        return a.toISOString();
+      } else{
+        return false;
+      }
+
     } else {
       const b = new Date(Math.round((excelDate - (25567 + 2))*86400)*1000).toISOString();
       return b
     }
   }
 
-
+const validateExcel = (rows)=>{
+    let errorMsg = "";
+    rows && rows.forEach((row,index)=>{
+      const isMissing = row.includes(undefined);
+      const currentRow = index+dataRowOffset;
+      for(let i=0;i<10;i++){
+        if(row[i] == undefined){
+          errorMsg+= `check row ${currentRow}`;
+          break;
+        }
+      }
+    });
+    if(errorMsg){
+      return {
+        valid:false,
+        msg:errorMsg
+      }
+    } else {
+      return {
+        valid: true,
+        msg:null
+      }
+    }
+  }
 
 
   const fileHandler = (event) => {
@@ -136,51 +166,72 @@ export default () => {
         setNumOfClusters(0);
         setShowClustersFilters(true);
         setShowStatistics(false);
-        resp.rows.splice(0,dataRowOffset-1);
-
         const validRows = resp.rows.filter(row=>{
           return _.isArray(row) && !_.isEmpty(row);
         });
+        if(validRows && validRows[0] && validRows[0][0] === 'eventid'){
+          validRows.shift();
+        }
+
+
+
+        const {valid, msg} = validateExcel(validRows);
+        if(!valid){
+          setLoading(false);
+          alert(msg);
+          return;
+        }
         setTotalRows(validRows.length);
-        const transformedData = validRows.map(row=>{
-          const excelTime = excelDateToJSDate(row[2]);
-          const newDate = excelDateToIsoString(row[1]);
-          const dateWithTime = moment(newDate).add(excelTime.hour,'h').add(excelTime.minute, 'm').toISOString();
-          return{
-            ParentGroup:0,
-            eventid:row[0],
-            date:dateWithTime,
-            stime:`${excelTime.hour}:${excelTime.minute}:00`,
-            latitude:row[3],
-            longtitude:row[4],
-            z:row[5],
-            typeF:row[6],
-            magF:row[7],
-            Id:row[8],
-            Name:row[9],
-            _id:row[8],
-          }
-        });
-        const excelRowsArray = validRows.map(row=>{
-          const excelTime = excelDateToJSDate(row[2]);
-          const newDate = excelDateToIsoString(row[1]);
-          const dateWithTime = moment(newDate).add(excelTime.hour,'h').add(excelTime.minute, 'm').toISOString();
-          return{
-            eventid:row[0],
-            date:dateWithTime,
-            stime:`${excelTime.hour}:${excelTime.minute}:00`,
-            latitude:row[3],
-            longtitude:row[4],
-            z:row[5],
-            typeF:row[6],
-            magF:row[7],
-            Id:row[8],
-            Name:row[9],
-            _id:row[8],
-            }
-        })
-        setRawData([...transformedData]);
-        setExcelRows([...excelRowsArray]);
+        try {
+          const transformedData = validRows.map((row,index)=>{
+                    const excelTime = excelDateToJSDate(row[2]);
+                    const validDate = excelDateToIsoString(row[1]);
+                    if(!validDate){
+                      const msg = 'row '+(index+dataRowOffset)+" has invalid date";
+                      alert(msg);
+                      throw new Error(row);
+                    }
+                    const newDate = validDate;
+                    const dateWithTime = moment(newDate).add(excelTime.hour,'h').add(excelTime.minute, 'm').toISOString();
+                    return{
+                      ParentGroup:0,
+                      eventid:row[0],
+                      date:dateWithTime,
+                      stime:`${excelTime.hour}:${excelTime.minute}:00`,
+                      latitude:row[3],
+                      longtitude:row[4],
+                      z:row[5],
+                      typeF:row[6],
+                      magF:row[7],
+                      Id:row[8],
+                      Name:row[9],
+                      _id:row[8],
+                    }
+                  });
+                  const excelRowsArray = validRows.map(row=>{
+                    const excelTime = excelDateToJSDate(row[2]);
+                    const newDate = excelDateToIsoString(row[1]);
+                    const dateWithTime = moment(newDate).add(excelTime.hour,'h').add(excelTime.minute, 'm').toISOString();
+                    return{
+                      eventid:row[0],
+                      date:dateWithTime,
+                      stime:`${excelTime.hour}:${excelTime.minute}:00`,
+                      latitude:row[3],
+                      longtitude:row[4],
+                      z:row[5],
+                      typeF:row[6],
+                      magF:row[7],
+                      Id:row[8],
+                      Name:row[9],
+                      _id:row[8],
+                      }
+                  })
+                  setRawData([...transformedData]);
+                  setExcelRows([...excelRowsArray]);
+        } catch (e) {
+          console.log(e);
+        }
+
       }
       setLoading(false);
 
@@ -237,10 +288,6 @@ export default () => {
 
         <br/>
         <br/>
-        {/*{excelRows.length ? <Button variant="contained" color="primary" disabled={!rawData.length} onClick={()=>{*/}
-        {/*  setShowClustersFilters(true);*/}
-        {/*  setNumOfClusters(0);*/}
-        {/*}} >Make Clusters</Button>:null}*/}
         {!_.isEmpty(excelRows) && <div>
           <TextField
                   id="outlined-number"
@@ -320,19 +367,19 @@ export default () => {
             <GridReact item >
               <Button variant="contained" color="primary" style={{paddingRight:10}}  onClick={makeGroups} >GO</Button>
             </GridReact>
-            <GridReact item >
+            <GridReact item key={'clustered'}>
               {numOfClusters ? <DownloadExcel fullData={clusteredData} isClustered={true} buttonTitle={'Clustered events as excel'}/> : null}
             </GridReact>
-            <GridReact item >
-              {numOfClusters ? <DownloadExcel fullData={unclusteredEvents} isClustered={false} buttonTitle={'UnClustered events as excel'}/> : null}
+            <GridReact item key={'unclustered'}>
+              {unclusteredRows ? <DownloadExcel fullData={unclusteredEvents} isClustered={false} buttonTitle={'UnClustered events as excel'}/> : null}
             </GridReact>
           </GridReact>
         </div>}
         {showStatistics &&  <div style={{paddingTop:30}}>
-            {numOfClusters ? <Typography variant="body2" >Total events: {totalRows}</Typography> : null}
-            {numOfClusters ? <Typography variant="body2" >Clustered events: {clusteredRows} ({Math.floor(clusteredRows*100/totalRows)})%</Typography> : null}
-          {numOfClusters ? <Typography variant="body2" >Unclustered events: {unclusteredRows}</Typography> : null}
-          {numOfClusters ? <Typography variant="body2" >Total Clusters: {numOfClusters}</Typography> : null}
+            <Typography variant="body2" >Total events: {totalRows}</Typography>
+            <Typography variant="body2" >Clustered events: {clusteredRows} ({Math.floor(clusteredRows*100/totalRows)})%</Typography>
+          <Typography variant="body2" >Unclustered events: {unclusteredRows}</Typography>
+          <Typography variant="body2" >Total Clusters: {numOfClusters}</Typography>
         </div>}
 
     </Paper>
