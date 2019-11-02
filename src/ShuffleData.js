@@ -116,7 +116,7 @@ export default ({ checks }) => {
         }
         const { valid, msg } = validateExcel(validRows);
         if (!valid) {
-          setLoading(false);
+          store.loading.set(false);
           alert(msg);
           return;
         }

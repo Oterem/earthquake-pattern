@@ -109,10 +109,9 @@ export default ({ checks }) => {
     let errorMsg = "";
     rows &&
       rows.forEach((row, index) => {
-        const isMissing = row.includes(undefined);
         const currentRow = index + dataRowOffset;
         for (let i = 0; i < 10; i++) {
-          if (row[i] == undefined) {
+          if (row[i] === undefined) {
             errorMsg += `check row ${currentRow}`;
             break;
           }
@@ -152,7 +151,7 @@ export default ({ checks }) => {
 
         const { valid, msg } = validateExcel(validRows);
         if (!valid) {
-          setLoading(false);
+          store.loading.set(false);
           alert(msg);
           return;
         }
