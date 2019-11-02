@@ -192,3 +192,28 @@ export function excelDateToJSDate(excel){
       }
     return {hour, minute};
   }
+
+export function validateExcel(rows,dataRowOffset){
+    let errorMsg = "";
+    rows &&
+      rows.forEach((row, index) => {
+        const currentRow = index + dataRowOffset;
+        for (let i = 0; i < 10; i++) {
+          if (row[i] === undefined) {
+            errorMsg += "check row " +currentRow + "\n";
+            break;
+          }
+        }
+      });
+    if (errorMsg) {
+      return {
+        valid: false,
+        msg: errorMsg
+      };
+    } else {
+      return {
+        valid: true,
+        msg: null
+      };
+    }
+  };

@@ -11,7 +11,8 @@ import * as _ from "lodash";
 import {
   buildGroups,
   excelDateToIsoString,
-  excelDateToJSDate
+  excelDateToJSDate,
+  validateExcel
 } from "./utils/HelperFunctions";
 import { MyContext } from "./utils/AppContext";
 import { makeStyles } from "@material-ui/core/styles";
@@ -105,30 +106,6 @@ export default ({ checks }) => {
     };
   }
 
-  const validateExcel = rows => {
-    let errorMsg = "";
-    rows &&
-      rows.forEach((row, index) => {
-        const currentRow = index + dataRowOffset;
-        for (let i = 0; i < 10; i++) {
-          if (row[i] === undefined) {
-            errorMsg += `check row ${currentRow}`;
-            break;
-          }
-        }
-      });
-    if (errorMsg) {
-      return {
-        valid: false,
-        msg: errorMsg
-      };
-    } else {
-      return {
-        valid: true,
-        msg: null
-      };
-    }
-  };
 
   const fileHandler = event => {
     store.loading.setLoadingText("Importing file...");
@@ -149,7 +126,7 @@ export default ({ checks }) => {
           validRows.shift();
         }
 
-        const { valid, msg } = validateExcel(validRows);
+        const { valid, msg } = validateExcel(validRows,dataRowOffset);
         if (!valid) {
           store.loading.set(false);
           alert(msg);

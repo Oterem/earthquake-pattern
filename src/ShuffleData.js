@@ -9,7 +9,8 @@ import * as _ from "lodash";
 import {
   fisherYatesShuffle,
   excelDateToIsoString,
-  excelDateToJSDate
+  excelDateToJSDate,
+  validateExcel
 } from "./utils/HelperFunctions";
 import { MyContext } from "./utils/AppContext";
 import CheckBoxes from "./CheckBoxes";
@@ -73,30 +74,6 @@ export default ({ checks }) => {
     }, 2000);
   }
 
-  const validateExcel = rows => {
-    let errorMsg = "";
-    rows &&
-      rows.forEach((row, index) => {
-        const isMissing = row.includes(undefined);
-        const currentRow = index + dataRowOffset;
-        for (let i = 0; i < 10; i++) {
-          if (row[i] === undefined) {
-            errorMsg += `check row ${currentRow}`;
-            break;
-          }
-        }
-      });
-    if (errorMsg) {
-      return {
-        valid: false,
-        msg: errorMsg
-      };
-    }
-    return {
-      valid: true,
-      msg: null
-    };
-  };
 
   const fileHandler = event => {
     store.loading.setLoadingText("Importing file...");
@@ -114,7 +91,7 @@ export default ({ checks }) => {
         if (validRows && validRows[0] && validRows[0][0] === "eventid") {
           validRows.shift();
         }
-        const { valid, msg } = validateExcel(validRows);
+        const { valid, msg } = validateExcel(validRows,dataRowOffset);
         if (!valid) {
           store.loading.set(false);
           alert(msg);
