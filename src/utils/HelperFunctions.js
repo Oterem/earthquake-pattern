@@ -5,7 +5,7 @@ let data = {};
 let visitedEvents = {};
 let fullData = [];
 
-export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj) {
+export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection) {
     rows.forEach(row=>{
         delete row.ParentGroup;
         delete row.distanceFromParent;
@@ -29,7 +29,7 @@ export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj) 
             children: []
         }
         while (fetchMoreChildren) {
-            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance,overrideObj);
+            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection);
             if (directChildren.length) {
                 const nearestEvent = _.minBy(directChildren, 'date');
                 if (nearestEvent) {
@@ -60,10 +60,13 @@ export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj) 
     return final
 }
 
-function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj) {
-    const maxDate = moment(event.date).add(cutOffDays,'d').toISOString();
+function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1) {
+    const boundedDate = cutoffDaysDirection ? moment(event.date).add(cutOffDays,'d').toISOString() : moment(event.date).subtract(cutOffDays,'d').toISOString();
     let adjacentYear = fullData.filter(row=>{
-        return row.date >= event.date && row.date <= maxDate && row.eventid !== event.eventid
+        if(!cutoffDaysDirection){ //direction down
+            return row.date <= event.date && row.date >= boundedDate && row.eventid !== event.eventid
+        }//direction up
+        return row.date >= event.date && row.date <= boundedDate && row.eventid !== event.eventid
     });
     if(overrideObj.isOverride && overrideObj.overrideLatitude){
         const combinedLat = event.latitude + overrideObj.overrideLatitude;

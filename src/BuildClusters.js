@@ -17,7 +17,9 @@ import {
 import { MyContext } from "./utils/AppContext";
 import { makeStyles } from "@material-ui/core/styles";
 import OverrideSwitch from './BuildClusetrs/OverrideSwitch';
-
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 const useStyles = makeStyles(theme => ({
   root: {
     flexGrow: 1,
@@ -49,6 +51,7 @@ export default ({ checks }) => {
   const [isOverride, setIsOverride] = useState(false);
   const [overrideLatitude, setOverrideLatitude] = useState(0);
   const [overrideLongitude, setOverrideLongitude] = useState(0);
+  const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
 
   useEffect(() => {
     store.loading.set(loading);
@@ -83,7 +86,8 @@ export default ({ checks }) => {
         magnitude,
         cutOffDays,
         distanceThreshold,
-        overrideObj
+        overrideObj,
+        cutoffDaysDirection
       );
       setShowStatistics(true);
       // setLoading(false);
@@ -96,7 +100,8 @@ export default ({ checks }) => {
       magnitude,
       cutOffDays,
       distanceThreshold,
-      overrideObj
+      overrideObj,
+      cutoffDaysDirection
     ) => {
       return new Promise(resolve => {
         const groups = buildGroups(
@@ -106,7 +111,8 @@ export default ({ checks }) => {
           magnitude,
           cutOffDays,
           distanceThreshold,
-          overrideObj
+          overrideObj,
+          cutoffDaysDirection
         );
         const clustered = groups.filter(obj => obj.children.length);
         setClusteredData([...clustered]);
@@ -124,6 +130,9 @@ export default ({ checks }) => {
     };
   }
 
+  const handleCutoffDaysDirectionChange = (event) =>{
+    setCutoffDaysDirection(+event.target.value);
+  }
 
   const fileHandler = event => {
     store.loading.setLoadingText("Importing file...");
@@ -329,23 +338,30 @@ export default ({ checks }) => {
                         variant="outlined"
                       />
           </GridReact>
-          <GridReact  item xs={12} md={2} >
-            <TextField
-                        id="outlined-number"
-                        label="Cut Off Days"
-                        value={cutOffDays}
-                        onChange={e => {
-                          setCutOffDays(e.target.value);
-                        }}
-                        type="number"
-                        // className={classes.textField}
-                        InputLabelProps={{
-                          shrink: true
-                        }}
-                        margin="normal"
-                        variant="outlined"
-                      />
-          </GridReact>
+            <GridReact  item xs={12} md={2} >
+                <TextField
+                                    id="outlined-number"
+                                    label="Cut Off Days"
+                                    value={cutOffDays}
+                                    onChange={e => {
+                                      setCutOffDays(e.target.value);
+                                    }}
+                                    type="number"
+                                    // className={classes.textField}
+                                    InputLabelProps={{
+                                      shrink: true
+                                    }}
+                                    margin="normal"
+                                    variant="outlined"
+                                  />
+            </GridReact>
+            <GridReact style={{display:"contents"}}  item xs={12} md={1} >
+              <RadioGroup   value={cutoffDaysDirection.toString()} onChange={handleCutoffDaysDirectionChange}>
+                    <FormControlLabel value="1" control={<Radio />} label="Up" />
+                    <FormControlLabel value="0" control={<Radio />} label="Down" />
+              </RadioGroup>
+            </GridReact>
+
           </GridReact>
 
           <br />
