@@ -225,6 +225,7 @@ export function validateExcel(rows,dataRowOffset){
         for (let i = 0; i < 10; i++) {
           if (row[i] === undefined) {
             errorMsg += "check row " +currentRow + "\n";
+            console.error(`row error: ${row}`)
             break;
           }
         }
