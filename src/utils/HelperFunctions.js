@@ -5,7 +5,7 @@ let data = {};
 let visitedEvents = {};
 let fullData = [];
 
-export function buildGroups (rows,lat,long,mag,cutOffDays,distance) {
+export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj) {
     rows.forEach(row=>{
         delete row.ParentGroup;
         delete row.distanceFromParent;
@@ -29,8 +29,7 @@ export function buildGroups (rows,lat,long,mag,cutOffDays,distance) {
             children: []
         }
         while (fetchMoreChildren) {
-
-            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance);
+            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance,overrideObj);
             if (directChildren.length) {
                 const nearestEvent = _.minBy(directChildren, 'date');
                 if (nearestEvent) {
@@ -61,15 +60,40 @@ export function buildGroups (rows,lat,long,mag,cutOffDays,distance) {
     return final
 }
 
-function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance) {
+function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj) {
     const maxDate = moment(event.date).add(cutOffDays,'d').toISOString();
     let adjacentYear = fullData.filter(row=>{
         return row.date >= event.date && row.date <= maxDate && row.eventid !== event.eventid
     });
+    if(overrideObj.isOverride && overrideObj.overrideLatitude){
+        const combinedLat = event.latitude + overrideObj.overrideLatitude;
+        Object.assign(event,{overridedLatitude:combinedLat});
+        if(combinedLat<-62){
+            const diff = Math.abs(combinedLat+62);
+            Object.assign(event,{overridedLatitude:62-diff});
+        } else if(combinedLat > 62){
+            const diff = combinedLat - 62;
+            Object.assign(event,{overridedLatitude:-62+diff});
+        }
+
+    }
+    if(overrideObj.isOverride && overrideObj.overrideLongitude){
+        const combinedLong = event.longtitude + overrideObj.overrideLongitude;
+        Object.assign(event,{overridedLongitude:combinedLong});
+        if(combinedLong<-180){
+            const diff = Math.abs(combinedLong+180);
+            Object.assign(event,{overridedLongitude:180-diff});
+        } else if(combinedLong > 180){
+            const diff = combinedLong - 180;
+            Object.assign(event,{overridedLongitude:-180+diff});
+        }
+
+    }
     if(lat || lat==='0'){
         adjacentYear = adjacentYear.filter(obj=>{
+
             const objLat = Math.abs(obj.latitude);
-            const eventLat = Math.abs(event.latitude);
+            const eventLat = Math.abs(event.overridedLatitude ||event.latitude);
             let parsedLat = +lat;
             const upperBound = eventLat+parsedLat;
             const bottomBound = eventLat-parsedLat;
@@ -81,7 +105,7 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance) {
     if(long || long === '0'){
         adjacentYear = adjacentYear.filter(obj=>{
             const objLong = Math.abs(obj.longtitude);
-            const eventLong = Math.abs(event.longtitude);
+            const eventLong = Math.abs(event.overridedLongitude || event.longtitude);
             const parsedLaongitude = +long;
             const upperBound = eventLong+parsedLaongitude;
             const bottomBound = eventLong-parsedLaongitude;

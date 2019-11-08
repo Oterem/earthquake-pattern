@@ -35,6 +35,8 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
           /*handle parent*/
           const parent = cluster.parent;
           delete parent._id;
+          delete parent.overridedLatitude;
+          delete parent.overridedLongitude;
           parent.parentId = "self";
           parent.distanceFromParent = 0;
           parent.diffDays = 0;
@@ -45,6 +47,8 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
           children &&
             children.forEach(child => {
               delete child._id;
+              delete child.overridedLatitude;
+              delete child.overridedLongitude;
               const childRowArray = makeExcelRowArray(
                 child,
                 colors[colorIndex]

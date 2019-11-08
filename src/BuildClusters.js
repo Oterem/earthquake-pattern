@@ -16,6 +16,7 @@ import {
 } from "./utils/HelperFunctions";
 import { MyContext } from "./utils/AppContext";
 import { makeStyles } from "@material-ui/core/styles";
+import OverrideSwitch from './BuildClusetrs/OverrideSwitch';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -45,6 +46,9 @@ export default ({ checks }) => {
   const [unclusteredRows, setUnclusteredRows] = useState(0);
   const [unclusteredEvents, setUnclusteredEvents] = useState([]);
   const [dataRowOffset, setDataRowOffset] = useState(2);
+  const [isOverride, setIsOverride] = useState(false);
+  const [overrideLatitude, setOverrideLatitude] = useState(0);
+  const [overrideLongitude, setOverrideLongitude] = useState(0);
 
   useEffect(() => {
     store.loading.set(loading);
@@ -55,11 +59,22 @@ export default ({ checks }) => {
       alert("Insert at least one of: latitue or longitude");
       return;
     }
+    if(overrideLatitude && !latitude){
+      alert("you must insert +- Latitutue in order to override it");
+      return;
+    }
+    if(overrideLongitude && !longitude){
+      alert("you must insert +- Longitude in order to override it");
+      return;
+    }
 
     store.loading.setLoadingText("Building clusters...");
-    // setLoadMessage('Building clusters...');
     store.loading.set(true);
-    // setLoading(true);
+    const overrideObj = {
+      isOverride,
+      overrideLatitude:+overrideLatitude,
+      overrideLongitude:+overrideLongitude
+    };
     setTimeout(async () => {
       await a(
         [...excelRows],
@@ -67,7 +82,8 @@ export default ({ checks }) => {
         longitude,
         magnitude,
         cutOffDays,
-        distanceThreshold
+        distanceThreshold,
+        overrideObj
       );
       setShowStatistics(true);
       // setLoading(false);
@@ -79,7 +95,8 @@ export default ({ checks }) => {
       longitude,
       magnitude,
       cutOffDays,
-      distanceThreshold
+      distanceThreshold,
+      overrideObj
     ) => {
       return new Promise(resolve => {
         const groups = buildGroups(
@@ -88,7 +105,8 @@ export default ({ checks }) => {
           longitude,
           magnitude,
           cutOffDays,
-          distanceThreshold
+          distanceThreshold,
+          overrideObj
         );
         const clustered = groups.filter(obj => obj.children.length);
         setClusteredData([...clustered]);
@@ -221,94 +239,115 @@ export default ({ checks }) => {
       <br />
       <br />
       {!_.isEmpty(excelRows) && (
-        <div>
-          <TextField
-            id="outlined-number"
-            label="Latitude"
-            value={latitude}
-            onChange={e => {
-              setLatitude(e.target.value);
-            }}
-            type="number"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">+ -</InputAdornment>
-              )
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
-            margin="normal"
-            variant="outlined"
-          />
-          <TextField
-            id="outlined-number"
-            label="Longitude"
-            value={longitude}
-            onChange={e => {
-              setLongitude(e.target.value);
-            }}
-            type="number"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">+ -</InputAdornment>
-              )
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
-            margin="normal"
-            variant="outlined"
-          />
-          <TextField
-            id="outlined-number"
-            label="Distance threshold(Km)"
-            value={distanceThreshold}
-            onChange={e => {
-              setDistanceThreshold(e.target.value);
-            }}
-            type="number"
-            // className={classes.textField}
-            InputLabelProps={{
-              shrink: true
-            }}
-            margin="normal"
-            variant="outlined"
-          />
-          <TextField
-            id="outlined-number"
-            label="Magnitude"
-            value={magnitude}
-            onChange={e => {
-              setMagnitude(e.target.value);
-            }}
-            type="number"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">+ -</InputAdornment>
-              )
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
-            margin="normal"
-            variant="outlined"
-          />
-          <TextField
-            id="outlined-number"
-            label="Cut Off Days"
-            value={cutOffDays}
-            onChange={e => {
-              setCutOffDays(e.target.value);
-            }}
-            type="number"
-            // className={classes.textField}
-            InputLabelProps={{
-              shrink: true
-            }}
-            margin="normal"
-            variant="outlined"
-          />
+        <div >
+          <GridReact
+                      container
+                      spacing={1}
+                      direction="row"
+                      justify="center"
+                      alignItems="center"
+          >
+
+
+          <GridReact item xs={12} md={2}>
+            <TextField
+                        id="outlined-number"
+                        label="Latitude"
+                        value={latitude}
+                        onChange={e => {
+                          setLatitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2}>
+            <TextField
+                        id="outlined-number"
+                        label="Longitude"
+                        value={longitude}
+                        onChange={e => {
+                          setLongitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2} >
+            <TextField
+                        id="outlined-number"
+                        label="Distance threshold(Km)"
+                        value={distanceThreshold}
+                        onChange={e => {
+                          setDistanceThreshold(e.target.value);
+                        }}
+                        type="number"
+                        // className={classes.textField}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2} >
+            <TextField
+                        id="outlined-number"
+                        label="Magnitude"
+                        value={magnitude}
+                        onChange={e => {
+                          setMagnitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact  item xs={12} md={2} >
+            <TextField
+                        id="outlined-number"
+                        label="Cut Off Days"
+                        value={cutOffDays}
+                        onChange={e => {
+                          setCutOffDays(e.target.value);
+                        }}
+                        type="number"
+                        // className={classes.textField}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          </GridReact>
+
           <br />
           <GridReact
             container
@@ -317,6 +356,13 @@ export default ({ checks }) => {
             justify="center"
             alignItems="center"
           >
+            <GridReact item xs={12}>
+                <OverrideSwitch
+                    setIsOverride={setIsOverride}
+                    setOverrideLatitudeParent={setOverrideLatitude}
+                    setOverrideLongitudeParent={setOverrideLongitude}
+                />
+            </GridReact>
             <GridReact item>
               <GridReact
                 container
