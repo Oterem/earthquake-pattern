@@ -45,7 +45,7 @@ function App() {
             <Switch>
                 <Route exact path="/login" component={Login}>
                 </Route>
-                <Route exact path="/omri">
+                <Route exact path="/private">
                     <LoadingOverlay
                       active={showLoader}
                       spinner

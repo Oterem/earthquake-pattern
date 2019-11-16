@@ -8,7 +8,6 @@ import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import BuildClusters from './BuildClusters'
 import ShuffleData from './ShuffleData'
-import { MyContext } from './utils/AppContext'
 import firebase from './firebase';
 import { Redirect } from 'react-router-dom'
 
@@ -52,9 +51,8 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function SimpleTabs(props) {
+function SimpleTabs() {
   const classes = useStyles();
-  const store = useContext(MyContext.Context);
   const [value, setValue] = React.useState(0);
 
 
@@ -64,9 +62,8 @@ function SimpleTabs(props) {
 
   if(!firebase.getCurrentUseId()){
     alert('please log in');
-    return <Redirect to='login'/>
+    return <Redirect to='/login'/>
   }
-
 
 
 

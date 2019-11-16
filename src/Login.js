@@ -48,7 +48,7 @@ export default function Login(props) {
   async function login() {
       try {
         await firebase.login(email, password);
-        props.history.replace('/omri')
+        props.history.replace('/private')
       } catch(error) {
         alert(error.message)
       }
@@ -64,7 +64,6 @@ export default function Login(props) {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          {/*<form className={classes.form} noValidate>*/}
             <TextField
               variant="outlined"
               margin="normal"
@@ -81,33 +80,31 @@ export default function Login(props) {
               })}
             />
           <TextField
-                      variant="outlined"
-                      margin="normal"
-                      required
-                      fullWidth
-                      name="password"
-                      label="Password"
-                      type="password"
-                      id="password"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event =>{
-                        setPassword(event.target.value);
-                      })}
-                    />
-          {/*</form>*/}
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event =>{
+                setPassword(event.target.value);
+              })}
+          />
         </div>
         <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    color="primary"
-                    className={classes.submit}
-                    onClick={login}
-                  >
-                    Sign In
-                  </Button>
-
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            className={classes.submit}
+            onClick={login}
+        >
+            Sign In
+        </Button>
       </Container>
 
 
