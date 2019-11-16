@@ -45,6 +45,9 @@ const useStyles = makeStyles(theme => ({
     flexGrow: 1,
     backgroundColor: theme.palette.background.paper,
   },
+  tabs:{
+    height: 5
+  }
 }));
 
 export default function SimpleTabs() {
@@ -59,7 +62,7 @@ export default function SimpleTabs() {
   return (
     <div className={classes.root}>
       <AppBar position="static">
-        <Tabs value={value} onChange={handleChange} aria-label="simple tabs example" variant="fullWidth">
+        <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="fullWidth">
           <Tab label="Build Clusters" {...a11yProps(0)} />
           <Tab  label="Shuffle data" {...a11yProps(1)} />
         </Tabs>

@@ -52,6 +52,7 @@ export default ({ checks }) => {
   const [overrideLatitude, setOverrideLatitude] = useState(0);
   const [overrideLongitude, setOverrideLongitude] = useState(0);
   const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
+  const [children, setChildren] = useState(0);
 
   useEffect(() => {
     store.loading.set(loading);
@@ -104,7 +105,7 @@ export default ({ checks }) => {
       cutoffDaysDirection
     ) => {
       return new Promise(resolve => {
-        const groups = buildGroups(
+        const {final,visitedEvents} = buildGroups(
           arrayOfDate,
           latitude,
           longitude,
@@ -114,15 +115,26 @@ export default ({ checks }) => {
           overrideObj,
           cutoffDaysDirection
         );
-        const clustered = groups.filter(obj => obj.children.length);
+        const clustered = final.filter(obj => obj.children.length);
         setClusteredData([...clustered]);
-        const unclustered = groups.filter(obj => !obj.children.length);
+        const ids = Object.keys(visitedEvents);
+        const unclustered = [];
+        ids.forEach(id=>{
+          const obj = visitedEvents[id];
+          if(obj && obj.taken ===false){
+            const objtoPush = arrayOfDate.find(obj=>obj.eventid === +id);
+            unclustered.push(objtoPush);
+          }
+        });
         let counter = 0;
+        let childrenCount = 0;
         clustered.forEach(row => {
-          counter += 1 + row.children.length;
+          counter += 1;
+          childrenCount += row.children.length;
         });
         setUnclusteredEvents(unclustered);
         setClusteredRows(counter);
+        setChildren(childrenCount);
         setUnclusteredRows(unclustered.length);
         setNumOfClusters(clustered.length);
         resolve();
@@ -425,6 +437,10 @@ export default ({ checks }) => {
           <Typography variant="body2">
             Clustered events: {clusteredRows} (
             {Math.floor((clusteredRows * 100) / totalRows)})%
+          </Typography>
+          <Typography variant="body2">
+            Children: {children} (
+            {Math.floor((children * 100) / totalRows)})%
           </Typography>
           <Typography variant="body2">
             Unclustered events: {unclusteredRows}

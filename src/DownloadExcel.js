@@ -34,13 +34,15 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
           const colorIndex = index % 6;
           /*handle parent*/
           const parent = cluster.parent;
-          delete parent._id;
-          delete parent.overridedLatitude;
-          delete parent.overridedLongitude;
-          parent.parentId = "self";
-          parent.distanceFromParent = 0;
-          parent.diffDays = 0;
-          const parentRowArray = makeExcelRowArray(parent, colors[colorIndex]);
+          if(parent){
+            delete parent._id;
+            delete parent.overridedLatitude;
+            delete parent.overridedLongitude;
+            parent.parentId = "self";
+            parent.distanceFromParent = 0;
+            parent.diffDays = 0;
+          }
+          const parentRowArray = makeExcelRowArray(parent || cluster, colors[colorIndex]);
           x.push(parentRowArray);
           /*hadnle children*/
           const children = cluster.children;

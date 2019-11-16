@@ -6,34 +6,42 @@ let visitedEvents = {};
 let fullData = [];
 
 export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection) {
+    visitedEvents = {};
     rows.forEach(row=>{
         delete row.ParentGroup;
         delete row.distanceFromParent;
+        visitedEvents[row.eventid] = {
+            visited:false,
+            taken:false
+        }
     });
     fullData = rows;
-    visitedEvents = {};
+
 
     data = {};
     for (const event of rows) {
+        visitedEvents[event.eventid] = {...visitedEvents[event.eventid],visited:true}
         if (visited(event.eventid)) {
             continue;
         }
         let fetchMoreChildren = true;
         let currentEvent = event;
-        visitedEvents[event.eventid] = true
-        data[event.eventid] = {
-            parent: event,
-            parentLatitude: event.latitude,
-            parentDate: event.date,
-            parentMagnitude: event.magF,
-            children: []
-        }
         while (fetchMoreChildren) {
-            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection);
+            const directChildren = findEventDirectChildren(currentEvent,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection,visitedEvents);
             if (directChildren.length) {
+                if(!_.has(data,event.eventid)){
+                    data[event.eventid] = {
+                        parent: event,
+                        parentLatitude: event.latitude,
+                        parentDate: event.date,
+                        parentMagnitude: event.magF,
+                        children: []
+                    }
+                }
+                visitedEvents[event.eventid] = {...visitedEvents[event.eventid],taken:true}
                 const nearestEvent = _.minBy(directChildren, 'date');
                 if (nearestEvent) {
-                    visitedEvents[nearestEvent.eventid] = true
+                    visitedEvents[nearestEvent.eventid] = {...visitedEvents[nearestEvent.eventid],taken : true}
                     nearestEvent.parentId = currentEvent.eventid
                     nearestEvent.distanceFromParent = getDistanceFromLatLonInKm(currentEvent.latitude, currentEvent.longtitude, nearestEvent.latitude, nearestEvent.longtitude);
                     nearestEvent.diffDays = diffBetweenDates(currentEvent.date, nearestEvent.date);
@@ -57,10 +65,11 @@ export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj,c
             final.push(a);
         // }
     });
-    return final
+    return {final,visitedEvents}
 }
 
-function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1) {
+function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1,visitedEvents) {
+    const a = visitedEvents;
     const boundedDate = cutoffDaysDirection ? moment(event.date).add(cutOffDays,'d').toISOString() : moment(event.date).subtract(cutOffDays,'d').toISOString();
     let adjacentYear = fullData.filter(row=>{
         if(!cutoffDaysDirection){ //direction down
@@ -159,8 +168,10 @@ function deg2rad(deg) {
   return deg * (Math.PI/180)
 }
 
-function visited(event){
-    return _.has(visitedEvents, event);
+
+
+const visited = (eventid)=>{
+    return visitedEvents[eventid].taken === true
 }
 
 function diffBetweenDates(date1,date2){
