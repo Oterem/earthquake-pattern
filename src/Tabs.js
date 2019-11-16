@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
@@ -9,6 +9,8 @@ import Box from '@material-ui/core/Box';
 import BuildClusters from './BuildClusters'
 import ShuffleData from './ShuffleData'
 import { MyContext } from './utils/AppContext'
+import firebase from './firebase';
+import { Redirect } from 'react-router-dom'
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -50,16 +52,25 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export default function SimpleTabs() {
+function SimpleTabs(props) {
   const classes = useStyles();
   const store = useContext(MyContext.Context);
   const [value, setValue] = React.useState(0);
+
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  return (
+  if(!firebase.getCurrentUseId()){
+    alert('please log in');
+    return <Redirect to='login'/>
+  }
+
+
+
+
+  return  (
     <div className={classes.root}>
       <AppBar position="static">
         <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="fullWidth">
@@ -76,3 +87,5 @@ export default function SimpleTabs() {
     </div>
   );
 }
+
+export default SimpleTabs

@@ -8,6 +8,7 @@
     "@material-ui/icons": "^4.5.1",
     "concurrently": "^5.0.0",
     "electron-is-dev": "^1.1.0",
+    "firebase": "^7.4.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "react": "^16.10.2",
@@ -15,6 +16,7 @@
     "react-dom": "^16.10.2",
     "react-excel-renderer": "^1.1.0",
     "react-loading-overlay": "^1.0.1",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "3.2.0",
     "semantic-ui-react": "^0.88.1",
     "wait-on": "^3.3.0"
