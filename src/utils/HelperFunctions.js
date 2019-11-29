@@ -78,7 +78,12 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrid
         return row.date >= event.date && row.date <= boundedDate && row.eventid !== event.eventid
     });
     if(overrideObj.isOverride && overrideObj.overrideLatitude){
-        const combinedLat = event.latitude + overrideObj.overrideLatitude;
+        let combinedLat
+        if(event.latitude >=0){
+            combinedLat = event.latitude + overrideObj.overrideLatitude;
+        } else {
+            combinedLat = event.latitude - overrideObj.overrideLatitude;
+        }
         Object.assign(event,{overridedLatitude:combinedLat});
         if(combinedLat<-62){
             const diff = Math.abs(combinedLat+62);
@@ -90,7 +95,12 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrid
 
     }
     if(overrideObj.isOverride && overrideObj.overrideLongitude){
-        const combinedLong = event.longtitude + overrideObj.overrideLongitude;
+        let combinedLong;
+        if(event.latitude >=0){
+            combinedLong = event.longtitude + overrideObj.overrideLongitude;
+        } else {
+            combinedLong = event.longtitude - overrideObj.overrideLongitude;
+        }
         Object.assign(event,{overridedLongitude:combinedLong});
         if(combinedLong<-180){
             const diff = Math.abs(combinedLong+180);
