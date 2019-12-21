@@ -8,6 +8,8 @@ import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import BuildClusters from './BuildClusters'
 import ShuffleData from './ShuffleData'
+import RunTests from './RunTests';
+import MatchGroups from './MatchGroups';
 import firebase from './firebase';
 import { Redirect } from 'react-router-dom'
 
@@ -73,6 +75,7 @@ function SimpleTabs() {
         <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="fullWidth">
           <Tab label="Build Clusters" {...a11yProps(0)} />
           <Tab  label="Shuffle data" {...a11yProps(1)} />
+          <Tab  label="Match Groups" {...a11yProps(2)} />
         </Tabs>
       </AppBar>
       <TabPanel value={value} index={0}>
@@ -80,6 +83,9 @@ function SimpleTabs() {
       </TabPanel>
       <TabPanel value={value} index={1}>
         <ShuffleData/>
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        <MatchGroups/>
       </TabPanel>
     </div>
   );

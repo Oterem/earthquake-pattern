@@ -5,6 +5,9 @@ let data = {};
 let visitedEvents = {};
 let fullData = [];
 
+let visitedChildren = {};
+let childrenData = []; 
+
 export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection) {
     visitedEvents = {};
     rows.forEach(row=>{
@@ -160,6 +163,98 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrid
     })
 }
 
+function findParentChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1,visitedEvents) {
+  const a = visitedEvents;
+  const boundedDate = cutoffDaysDirection ? moment(event.date).add(cutOffDays,'d').toISOString() : moment(event.date).subtract(cutOffDays,'d').toISOString();
+  let adjacentYear = childrenData.filter(row=>{
+      if(!cutoffDaysDirection){ //direction down
+          return row.date <= event.date && row.date >= boundedDate && row.eventid !== event.eventid
+      }//direction up
+      return row.date >= event.date && row.date <= boundedDate && row.eventid !== event.eventid
+  });
+  if(overrideObj.isOverride && overrideObj.overrideLatitude){
+      let combinedLat
+      if(event.latitude >=0){
+          combinedLat = event.latitude + overrideObj.overrideLatitude;
+      } else {
+          combinedLat = event.latitude - overrideObj.overrideLatitude;
+      }
+      Object.assign(event,{overridedLatitude:combinedLat});
+      if(combinedLat<-62){
+          const diff = Math.abs(combinedLat+62);
+          Object.assign(event,{overridedLatitude:62-diff});
+      } else if(combinedLat > 62){
+          const diff = combinedLat - 62;
+          Object.assign(event,{overridedLatitude:-62+diff});
+      }
+
+  }
+  if(overrideObj.isOverride && overrideObj.overrideLongitude){
+      let combinedLong;
+      if(event.latitude >=0){
+          combinedLong = event.longtitude + overrideObj.overrideLongitude;
+      } else {
+          combinedLong = event.longtitude - overrideObj.overrideLongitude;
+      }
+      Object.assign(event,{overridedLongitude:combinedLong});
+      if(combinedLong<-180){
+          const diff = Math.abs(combinedLong+180);
+          Object.assign(event,{overridedLongitude:180-diff});
+      } else if(combinedLong > 180){
+          const diff = combinedLong - 180;
+          Object.assign(event,{overridedLongitude:-180+diff});
+      }
+
+  }
+  if(lat || lat==='0'){
+      adjacentYear = adjacentYear.filter(obj=>{
+
+          const objLat = Math.abs(obj.latitude);
+          const eventLat = Math.abs(event.overridedLatitude ||event.latitude);
+          let parsedLat = +lat;
+          const upperBound = eventLat+parsedLat;
+          const bottomBound = eventLat-parsedLat;
+          return (objLat >= eventLat && objLat <= upperBound) || (objLat <= eventLat && objLat >= bottomBound);
+
+      })
+  }
+
+  if(long || long === '0'){
+      adjacentYear = adjacentYear.filter(obj=>{
+          const objLong = Math.abs(obj.longtitude);
+          const eventLong = Math.abs(event.overridedLongitude || event.longtitude);
+          const parsedLaongitude = +long;
+          const upperBound = eventLong+parsedLaongitude;
+          const bottomBound = eventLong-parsedLaongitude;
+          return (objLong >= eventLong && objLong <= upperBound) || (objLong <= eventLong && objLong >= bottomBound);
+      })
+
+  }
+
+  if(mag){
+      adjacentYear = adjacentYear.filter(obj=>{
+          const objMag = Math.abs(obj.magF);
+          const eventMag = Math.abs(event.magF);
+          const parsedMag = +mag;
+          const maxMagnitude = eventMag+parsedMag;
+          const minMagnitude = eventMag-parsedMag;
+          return (objMag >= eventMag && objMag <= maxMagnitude) || (objMag <= eventMag && objMag >= minMagnitude);
+      })
+  }
+
+  if(distance){
+      adjacentYear = adjacentYear.filter(obj=>{
+          const dist = getDistanceFromLatLonInKm(event.latitude, event.longtitude, obj.latitude, obj.longtitude);
+          const parsedDistance = +dist;
+          return parsedDistance > distance;
+      });
+  }
+
+  return adjacentYear.filter(obj=>{
+      return !visitedChild(obj.eventid);
+  })
+}
+
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the earth in km
   const dLat = deg2rad(lat2-lat1);  // deg2rad below
@@ -182,6 +277,10 @@ function deg2rad(deg) {
 
 const visited = (eventid)=>{
     return visitedEvents[eventid].taken === true
+}
+
+const visitedChild = (eventid)=>{
+  return visitedChildren[eventid].taken === true
 }
 
 function diffBetweenDates(date1,date2){
@@ -248,6 +347,7 @@ export function validateExcel(rows,dataRowOffset){
         const currentRow = index + dataRowOffset;
         for (let i = 0; i < 10; i++) {
           if (row[i] === undefined) {
+            debugger
             errorMsg += "check row " +currentRow + "\n";
             console.error(`row error: ${row}`)
             break;
@@ -266,3 +366,66 @@ export function validateExcel(rows,dataRowOffset){
       };
     }
   };
+
+
+  export function matchGroups (parents,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection, children) {
+
+    visitedEvents = {};
+    visitedChildren = {};
+    parents.forEach(row=>{
+        delete row.ParentGroup;
+        delete row.distanceFromParent;
+        visitedEvents[row.eventid] = {
+            visited:false,
+            taken:false
+        }
+    });
+    children.forEach(row=>{
+      delete row.ParentGroup;
+      delete row.distanceFromParent;
+      visitedChildren[row.eventid] = {
+          visited:false,
+          taken:false
+      }
+  });
+    childrenData = children;
+
+
+
+    data = {};
+    for (const event of parents) {
+        visitedEvents[event.eventid] = {...visitedEvents[event.eventid],visited:true}
+        const directChildren = findParentChildren(event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection,visitedChildren);
+        if(directChildren.length){
+          if(!_.has(data,event.eventid)){
+            data[event.eventid] = {
+                parent: event,
+                parentLatitude: event.latitude,
+                parentDate: event.date,
+                parentMagnitude: event.magF,
+                children: []
+            }
+        }
+          const nearestEvent = _.minBy(directChildren, 'date');
+          if(nearestEvent){
+            visitedEvents[event.eventid] = {...visitedEvents[event.eventid],taken:true}
+            visitedChildren[nearestEvent.eventid] = {...visitedChildren[nearestEvent.eventid], taken: true};
+            nearestEvent.parentId = event.eventid;
+            nearestEvent.distanceFromParent = getDistanceFromLatLonInKm(event.latitude, event.longtitude, nearestEvent.latitude, nearestEvent.longtitude);
+            nearestEvent.diffDays = diffBetweenDates(event.date, nearestEvent.date);
+            data[event.eventid].children.push(nearestEvent);
+
+          }
+        }
+
+    }
+    const z = Object.keys(data);
+    const final = [];
+    z.forEach(key => {
+        const a = data[key];
+        // if (a.children.length) {
+            final.push(a);
+        // }
+    });
+    return {final,visitedEvents, visitedChildren}
+}
