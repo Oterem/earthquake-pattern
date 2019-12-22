@@ -342,9 +342,11 @@ export function excelDateToJSDate(excel){
 
 export function validateExcel(rows,dataRowOffset){
     let errorMsg = "";
+    const ids = [];
     rows &&
       rows.forEach((row, index) => {
         const currentRow = index + dataRowOffset;
+        ids.push(row[0]);
         for (let i = 0; i < 10; i++) {
           if (row[i] === undefined) {
             debugger
@@ -354,6 +356,10 @@ export function validateExcel(rows,dataRowOffset){
           }
         }
       });
+    const duplicate = _(ids).groupBy().pickBy(x => x.length > 1).keys().value();
+    if(duplicate && duplicate.length){
+        errorMsg += "found "+ duplicate.length+" duplicate event ids: " +duplicate.toString() + "\n";
+    }
     if (errorMsg) {
       return {
         valid: false,
