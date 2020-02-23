@@ -1,8 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
+import InputAdornment from "@material-ui/core/InputAdornment";
+import Typography from "@material-ui/core/Typography";
 import GridReact from "@material-ui/core/Grid";
 import { ExcelRenderer } from "react-excel-renderer";
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import OverrideSwitch from './BuildClusetrs/OverrideSwitch';
 import DownloadExcel from "./DownloadExcel";
 import moment from "moment";
 import * as _ from "lodash";
@@ -14,6 +20,11 @@ import {
 } from "./utils/HelperFunctions";
 import { MyContext } from "./utils/AppContext";
 import CheckBoxes from "./CheckBoxes";
+import worker from 'workerize-loader!./worker'; // eslint-disable-line import/no-webpack-loader-syntax
+import mapLimit from 'async/mapLimit';
+import DownloadTestsResultsExcel from './DownTestsResultsExcel';
+// Create an instance of your worker
+
 
 export default ({ checks }) => {
 
@@ -34,13 +45,85 @@ export default ({ checks }) => {
     magF: false
   });
 
-  const results = Object.create(null);
+  const [isOverride, setIsOverride] = useState(false);
+  const [overrideLatitude, setOverrideLatitude] = useState(0);
+  const [overrideLongitude, setOverrideLongitude] = useState(0);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [magnitude, setMagnitude] = useState(0.5);
+  const [cutOffDays, setCutOffDays] = useState(365);
+  const [distanceThreshold, setDistanceThreshold] = useState(350);
+  const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
+
+  const [finalResults, setFinalResults] = useState([]);
+
+
+
+
+  const results = [];
+  let testsLeft = numOfTests;
 
   useEffect(() => {
     store.loading.set(loading);
   }, [loading]);
 
+  async function workerTask({id,propertyToShuffle}){
+    const shuffledArray = shuffleData(propertyToShuffle);
+    const data = shuffledArray.length ? shuffledArray : excelRows;
+    const overrideObj = {
+      isOverride,
+      overrideLatitude:+overrideLatitude,
+      overrideLongitude:+overrideLongitude
+    };
+    const workerParams = {
+      rows:[...data],
+      latitude,
+      longitude,
+      magnitude,
+      cutOffDays,
+      distanceThreshold,
+      overrideObj,
+      cutoffDaysDirection
+    };
+    const workerInstance = new worker();
+    const {final, visitedEvents} = await workerInstance.kuku(workerParams);
+    const testObj = {
+      id,
+      totalEvents:workerParams.rows.length
+    }
+    const clustered = final.filter(obj => obj.children.length);
+    testObj.numberOfParents = clustered.length;
+
+    let numberOfChildren = 0;
+    let numberOfUnClustered = 0;
+    clustered.forEach(row => {
+      numberOfChildren += row.children.length;
+    });
+
+    const ids = Object.keys(visitedEvents);
+    ids.forEach(id=>{
+      const obj = visitedEvents[id];
+      if(obj && obj.taken ===false){
+        const objtoPush = workerParams.rows.find(obj=>obj.eventid === +id);
+        if(objtoPush){
+          numberOfUnClustered++;
+        }
+      }
+    });
+
+    testObj.unclusteredEvents = numberOfUnClustered;
+    testObj.numberOfChildren = numberOfChildren;
+    testsLeft--;
+    store.loading.setLoadingText(`${testsLeft} tests left`);
+    return testObj
+
+  }
+
   async function startTests(){
+    store.loading.setLoadingText(`Perfoming ${numOfTests} test`);
+    store.loading.set(true);
+    results.length = 0;
+    store.loading.setLoadingText(`${testsLeft} tests left`);
 
     const propertyToShuffle = [];
     const shuffledProps = Object.keys(markedCheckBoxes);
@@ -49,18 +132,29 @@ export default ({ checks }) => {
         propertyToShuffle.push(prop);
       }
     }
-    
+
+    const arrayOfPromises = [];
+
     /*Shuffle each array*/
-    for(let i=0; i<=numOfTests; i++){
-      const testId = i;
-      const shuffledArray = shuffleData(propertyToShuffle);
-      console.log('');
+    for(let i=0; i<=numOfTests-1; i++){
+      arrayOfPromises.push({id:i, propertyToShuffle});
+      // arrayOfPromises.push(workerTask({id:i,propertyToShuffle}))
     }
+    // const res = await Promise.all(arrayOfPromises);
+    const res = await mapLimit(arrayOfPromises,10, async (data)=>{
+      console.log(data.id)
+        return await workerTask({id:data.id,propertyToShuffle:data.propertyToShuffle})
+    });
+    debugger
+    setFinalResults(res);
+    setShowDownloadButton(true);
+    store.loading.set(false);
+
   }
 
 
 
-  async function shuffleData(propertyToShuffle) {
+ function shuffleData(propertyToShuffle) {
     const arrayHolder = {};
     propertyToShuffle &&
       propertyToShuffle.forEach(property => {
@@ -137,6 +231,10 @@ export default ({ checks }) => {
     });
   };
 
+  const handleCutoffDaysDirectionChange = (event) =>{
+    setCutoffDaysDirection(+event.target.value);
+  }
+
   return (
     <div>
       <>
@@ -183,6 +281,155 @@ export default ({ checks }) => {
                 <GridReact item>
                   <CheckBoxes setCheckBoxes={setCheckBoxes} />
                 </GridReact>
+
+                {!_.isEmpty(excelRows) && (
+        <div >
+          <GridReact
+                      container
+                      spacing={1}
+                      direction="row"
+                      justify="center"
+                      alignItems="center"
+          >
+
+
+          <GridReact item xs={12} md={2}>
+            <TextField
+                        id="outlined-number"
+                        label="Latitude"
+                        value={latitude}
+                        onChange={e => {
+                          setLatitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2}>
+            <TextField
+                        id="outlined-number"
+                        label="Longitude"
+                        value={longitude}
+                        onChange={e => {
+                          setLongitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2} >
+            <TextField
+                        id="outlined-number"
+                        label="Distance threshold(Km)"
+                        value={distanceThreshold}
+                        onChange={e => {
+                          setDistanceThreshold(e.target.value);
+                        }}
+                        type="number"
+                        // className={classes.textField}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+          <GridReact item xs={12} md={2} >
+            <TextField
+                        id="outlined-number"
+                        label="Magnitude"
+                        value={magnitude}
+                        onChange={e => {
+                          setMagnitude(e.target.value);
+                        }}
+                        type="number"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">+ -</InputAdornment>
+                          )
+                        }}
+                        InputLabelProps={{
+                          shrink: true
+                        }}
+                        margin="normal"
+                        variant="outlined"
+                      />
+          </GridReact>
+            <GridReact  item xs={12} md={2} >
+                <TextField
+                                    id="outlined-number"
+                                    label="Cut Off Days"
+                                    value={cutOffDays}
+                                    onChange={e => {
+                                      setCutOffDays(e.target.value);
+                                    }}
+                                    type="number"
+                                    // className={classes.textField}
+                                    InputLabelProps={{
+                                      shrink: true
+                                    }}
+                                    margin="normal"
+                                    variant="outlined"
+                                  />
+            </GridReact>
+            <GridReact style={{display:"contents"}}  item xs={12} md={1} >
+              <RadioGroup   value={cutoffDaysDirection.toString()} onChange={handleCutoffDaysDirectionChange}>
+                    <FormControlLabel value="1" control={<Radio />} label="Up" />
+                    <FormControlLabel value="0" control={<Radio />} label="Down" />
+              </RadioGroup>
+            </GridReact>
+
+          </GridReact>
+
+          <br />
+          <GridReact
+            container
+            spacing={10}
+            direction="row"
+            justify="center"
+            alignItems="center"
+          >
+            <GridReact item xs={12}>
+                <OverrideSwitch
+                    setIsOverride={setIsOverride}
+                    setOverrideLatitudeParent={setOverrideLatitude}
+                    setOverrideLongitudeParent={setOverrideLongitude}
+                />
+            </GridReact>
+            <GridReact item>
+              <GridReact
+                container
+                direction="row"
+                justify="center"
+                alignItems="center"
+              >
+
+
+              </GridReact>
+            </GridReact>
+          </GridReact>
+        </div>
+      )}
+
+
                 <GridReact item>
                 <TextField
                   id="outlined-number"
@@ -204,16 +451,13 @@ export default ({ checks }) => {
                       onClick={startTests}
                     >
                       Start Tests
-                    </Button>
-                  )}
+                    </Button>)}
                 </GridReact>
                 <GridReact item>
-                  {showDownloadButton && shuffledData.length ? (
-                    <DownloadExcel
-                      fullData={shuffledData}
-                      isClustered={false}
-                      isRandom
-                      buttonTitle="Download shuffled data"
+                  {showDownloadButton && finalResults.length ? (
+                    <DownloadTestsResultsExcel
+                      fullData={finalResults}
+                      buttonTitle="Download tests results"
                     />
                   ) : null}
                 </GridReact>

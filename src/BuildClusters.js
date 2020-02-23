@@ -63,11 +63,11 @@ export default ({ checks }) => {
       alert("Insert at least one of: latitue or longitude");
       return;
     }
-    if(overrideLatitude && !latitude){
+    if(isOverride && overrideLatitude!=0 && !latitude){
       alert("you must insert +- Latitutue in order to override it");
       return;
     }
-    if(overrideLongitude && !longitude){
+    if(isOverride && overrideLongitude!=0 && !longitude){
       alert("you must insert +- Longitude in order to override it");
       return;
     }

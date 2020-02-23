@@ -76,6 +76,7 @@ function SimpleTabs() {
           <Tab label="Build Clusters" {...a11yProps(0)} />
           <Tab  label="Shuffle data" {...a11yProps(1)} />
           <Tab  label="Match Groups" {...a11yProps(2)} />
+          <Tab  label="Run Tests" {...a11yProps(3)} />
         </Tabs>
       </AppBar>
       <TabPanel value={value} index={0}>
@@ -86,6 +87,9 @@ function SimpleTabs() {
       </TabPanel>
       <TabPanel value={value} index={2}>
         <MatchGroups/>
+      </TabPanel>
+      <TabPanel value={value} index={3}>
+        <RunTests/>
       </TabPanel>
     </div>
   );
