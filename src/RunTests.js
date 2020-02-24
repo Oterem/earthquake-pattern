@@ -132,16 +132,17 @@ export default ({ checks }) => {
       }
     }
 
-    const arrayOfPromises = [];
+    const res = [];
+
 
     /*Shuffle each array*/
     for(let i=0; i<=numOfTests-1; i++){
       const dataFromWorker = await workerTask({id:i,propertyToShuffle});
       testsLeft--;
-      arrayOfPromises.push(dataFromWorker);
-
+      res.push(dataFromWorker);
     }
-    setFinalResults(arrayOfPromises);
+
+    setFinalResults(res);
     setShowDownloadButton(true);
     store.loading.set(false);
 
