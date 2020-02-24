@@ -111,8 +111,8 @@ export default ({ checks }) => {
       }
     });
 
-    testObj.unclusteredEvents = numberOfUnClustered;
     testObj.numberOfChildren = numberOfChildren;
+    testObj.unclusteredEvents = numberOfUnClustered;
     store.loading.setLoadingText(`${testsLeft} tests left`);
     return testObj
 
