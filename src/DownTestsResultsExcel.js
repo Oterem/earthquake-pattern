@@ -103,8 +103,8 @@ export default ({ fullData, buttonTitle}) => {
             { title: "Test Id", width: { wpx: 150 } },
             { title: "Total Rows", width: { wpx: 150 } },
             { title: "Number Of Parents", width: { wpx: 150 } },
+            { title: "Number Of UnClustered", width: { wpx: 150 } },
             { title: "Number Of Children", width: { wpx: 150 } },
-            { title: "Number Of UnClustered", width: { wpx: 150 } }
         ],
         data: values
       }

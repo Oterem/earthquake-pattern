@@ -85,7 +85,7 @@ export default ({ checks }) => {
       overrideObj,
       cutoffDaysDirection
     };
-    const workerInstance = new worker();
+    const workerInstance = worker();
     const {final, visitedEvents} = await workerInstance.kuku(workerParams);
     const testObj = {
       id,
@@ -113,7 +113,6 @@ export default ({ checks }) => {
 
     testObj.unclusteredEvents = numberOfUnClustered;
     testObj.numberOfChildren = numberOfChildren;
-    testsLeft--;
     store.loading.setLoadingText(`${testsLeft} tests left`);
     return testObj
 
@@ -137,16 +136,12 @@ export default ({ checks }) => {
 
     /*Shuffle each array*/
     for(let i=0; i<=numOfTests-1; i++){
-      arrayOfPromises.push({id:i, propertyToShuffle});
-      // arrayOfPromises.push(workerTask({id:i,propertyToShuffle}))
+      const dataFromWorker = await workerTask({id:i,propertyToShuffle});
+      testsLeft--;
+      arrayOfPromises.push(dataFromWorker);
+
     }
-    // const res = await Promise.all(arrayOfPromises);
-    const res = await mapLimit(arrayOfPromises,10, async (data)=>{
-      console.log(data.id)
-        return await workerTask({id:data.id,propertyToShuffle:data.propertyToShuffle})
-    });
-    debugger
-    setFinalResults(res);
+    setFinalResults(arrayOfPromises);
     setShowDownloadButton(true);
     store.loading.set(false);
 
