@@ -8,6 +8,56 @@ let fullData = [];
 let visitedChildren = {};
 let childrenData = []; 
 
+function findAfterShocks({currentEvent, cutOffDays,distance, visitedEvents, fullData}){
+    const maxDate = moment(currentEvent.date).add(cutOffDays,'d').toISOString();
+    const afterShocks = fullData && fullData.filter(obj=>{
+        return !visited(obj.eventid) && !visitedEvents[obj.eventid].visited;
+    }).filter(row=>{
+        return row.date >= currentEvent.date && row.date <= maxDate && row.eventid !== currentEvent.eventid
+    }).filter(row=>{
+        const dist = getDistanceFromLatLonInKm(currentEvent.latitude, currentEvent.longtitude, row.latitude, row.longtitude);
+        if(dist <= distance){
+            visitedEvents[row.eventid] = {
+                ...visitedEvents[row.eventid],
+                visited:true
+            }
+            return true;
+        }
+        return false;
+    })
+    return afterShocks;
+}
+
+export function filterAfterShocks({rows, cutOffDays,distance}){
+    visitedEvents = {};
+    rows.forEach(row=>{
+        delete row.ParentGroup;
+        delete row.distanceFromParent;
+        visitedEvents[row.eventid] = {
+            visited:false,
+            taken:false
+        }
+    });
+    fullData = rows;
+
+
+    const eventWithoutAfterShocks = [];
+    for (const event of rows) {
+        
+        if (visited(event.eventid) || visitedEvents[event.eventid].visited) {
+            continue;
+        }
+        visitedEvents[event.eventid] = {...visitedEvents[event.eventid],visited:true}
+        let currentEvent = event;
+        const afterShocks = findAfterShocks({currentEvent,cutOffDays,distance,visitedEvents,fullData});
+        const combined = [currentEvent,...afterShocks];
+        const highestMag = _.maxBy(combined, 'magF');
+        visitedEvents[highestMag.eventid] = {...visitedEvents[highestMag.eventid], taken:true}
+        eventWithoutAfterShocks.push(highestMag);
+    }
+    return {eventWithoutAfterShocks,visitedEvents}
+}
+
 export function buildGroups (rows,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection) {
     visitedEvents = {};
     rows.forEach(row=>{

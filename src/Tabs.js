@@ -10,6 +10,7 @@ import BuildClusters from './BuildClusters'
 import ShuffleData from './ShuffleData'
 import RunTests from './RunTests';
 import MatchGroups from './MatchGroups';
+import FilterAfterShocks from './FilterAfterShocks';
 import firebase from './firebase';
 import { Redirect } from 'react-router-dom'
 
@@ -77,6 +78,7 @@ function SimpleTabs() {
           <Tab  label="Shuffle data" {...a11yProps(1)} />
           <Tab  label="Match Groups" {...a11yProps(2)} />
           <Tab  label="Run Tests" {...a11yProps(3)} />
+          <Tab  label="Filter aftershocks" {...a11yProps(4)} />
         </Tabs>
       </AppBar>
       <TabPanel value={value} index={0}>
@@ -90,6 +92,9 @@ function SimpleTabs() {
       </TabPanel>
       <TabPanel value={value} index={3}>
         <RunTests/>
+      </TabPanel>
+      <TabPanel value={value} index={4}>
+        <FilterAfterShocks/>
       </TabPanel>
     </div>
   );
