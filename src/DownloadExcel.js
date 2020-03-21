@@ -7,6 +7,22 @@ import moment from "moment";
 const ExcelFile = ReactExport.ExcelFile;
 const ExcelSheet = ReactExport.ExcelFile.ExcelSheet;
 
+const ExcelColumns = [
+  { title: "eventid", width: { wpx: 150 } },
+  { title: "date", width: { wpx: 150 } },
+  { title: "stime", width: { wpx: 150 } },
+  { title: "latitude", width: { wpx: 120 } },
+  { title: "longtitude", width: { wpx: 120 } },
+  { title: "z", width: { wpx: 100 } },
+  { title: "typeF", width: { wpx: 80 } },
+  { title: "magF", width: { wpx: 80 } },
+  { title: "Id", width: { wpx: 100 } },
+  { title: "Name", width: { wpx: 180 } },
+  { title: "parentId", width: { wpx: 150 } },
+  { title: "distanceFromParent", width: { wpx: 100 } },
+  { title: "diffDaysFromParent", width: { wpx: 100 } }
+];
+
 export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
   const colors = [
     "FFFFFF00",
@@ -39,8 +55,9 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
             delete parent.overridedLatitude;
             delete parent.overridedLongitude;
             parent.parentId = "self";
-            parent.distanceFromParent = 0;
             parent.diffDays = 0;
+            parent.distanceFromParent = 0;
+            
           }
           const parentRowArray = makeExcelRowArray(parent || cluster, colors[colorIndex]);
           x.push(parentRowArray);
@@ -63,46 +80,50 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
     multiDataSet.data = [...x];
     setMultidataSet([
       {
-        columns: [
-          { title: "eventid", width: { wpx: 150 } },
-          { title: "date", width: { wpx: 150 } },
-          { title: "stime", width: { wpx: 150 } },
-          { title: "latitude", width: { wpx: 120 } },
-          { title: "longtitude", width: { wpx: 120 } },
-          { title: "z", width: { wpx: 100 } },
-          { title: "typeF", width: { wpx: 80 } },
-          { title: "magF", width: { wpx: 80 } },
-          { title: "Id", width: { wpx: 100 } },
-          { title: "Name", width: { wpx: 180 } },
-          { title: "parentId", width: { wpx: 150 } },
-          { title: "distanceFromParent", width: { wpx: 100 } },
-          { title: "diffDaysFromParent", width: { wpx: 100 } }
-        ],
+        columns: ExcelColumns,
         data: x
       }
     ]);
   }, [fullData]);
 
+  const colTitleToObjKey = {
+    eventid:"eventid",
+    date:"date",
+    stime:"stime",
+    latitude:"latitude",
+    longtitude:"longtitude",
+    z:"z",
+    typeF:"typeF",
+    magF:"magF",
+    Id:"Id",
+    Name:"Name",
+    parentId:"parentId",
+    distanceFromParent:"distanceFromParent",
+    diffDaysFromParent:"diffDays"
+  }
+
   const makeExcelRowArray = (obj, color) => {
     const keys = Object.keys(obj);
     const rowArray = [];
-    for (const key of keys) {
-      const row = {
-        value: obj[key],
-        style: {
-          font: {
-            sz: "20"
+    ExcelColumns.forEach(colObj=>{
+        const key = colTitleToObjKey[colObj.title];
+        const row = {
+          value: obj[key],
+          style: {
+            font: {
+              sz: "20"
+            }
           }
+        };
+        if (isClustered) {
+          row.style.fill = { fgColor: { rgb: color } };
         }
-      };
-      if (isClustered) {
-        row.style.fill = { fgColor: { rgb: color } };
-      }
-      if (key === "date") {
-        row.value = moment(obj[key]).format("DD/MM/YYYY");
-      }
-      rowArray.push(row);
-    }
+        if (key === "date") {
+          row.value = moment(obj[key]).format("DD/MM/YYYY");
+        }
+        rowArray.push(row);
+
+    });
     return rowArray;
   };
 
