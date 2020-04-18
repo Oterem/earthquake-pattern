@@ -7,7 +7,7 @@ import moment from "moment";
 const ExcelFile = ReactExport.ExcelFile;
 const ExcelSheet = ReactExport.ExcelFile.ExcelSheet;
 
-const ExcelColumns = [
+const clusteredExcelColumns = [
   { title: "eventid", width: { wpx: 150 } },
   { title: "date", width: { wpx: 150 } },
   { title: "stime", width: { wpx: 150 } },
@@ -21,6 +21,19 @@ const ExcelColumns = [
   { title: "parentId", width: { wpx: 150 } },
   { title: "distanceFromParent", width: { wpx: 100 } },
   { title: "diffDaysFromParent", width: { wpx: 100 } }
+];
+
+const unclusteredExcelColumns = [
+  { title: "eventid", width: { wpx: 150 } },
+  { title: "date", width: { wpx: 150 } },
+  { title: "stime", width: { wpx: 150 } },
+  { title: "latitude", width: { wpx: 120 } },
+  { title: "longtitude", width: { wpx: 120 } },
+  { title: "z", width: { wpx: 100 } },
+  { title: "typeF", width: { wpx: 80 } },
+  { title: "magF", width: { wpx: 80 } },
+  { title: "Id", width: { wpx: 100 } },
+  { title: "Name", width: { wpx: 180 } }
 ];
 
 export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
@@ -80,7 +93,7 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
     multiDataSet.data = [...x];
     setMultidataSet([
       {
-        columns: ExcelColumns,
+        columns: isClustered ? clusteredExcelColumns : unclusteredExcelColumns,
         data: x
       }
     ]);
@@ -105,7 +118,8 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
   const makeExcelRowArray = (obj, color) => {
     const keys = Object.keys(obj);
     const rowArray = [];
-    ExcelColumns.forEach(colObj=>{
+    const ExcelColumnsToCheck = isClustered ? clusteredExcelColumns : unclusteredExcelColumns;
+    ExcelColumnsToCheck.forEach(colObj=>{
         const key = colTitleToObjKey[colObj.title];
         const row = {
           value: obj[key],
