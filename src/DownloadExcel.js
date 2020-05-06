@@ -138,7 +138,8 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
         rowArray.push(row);
 
     });
-    return rowArray;
+
+    return rowArray && rowArray.filter(obj=>obj.value);
   };
 
   return (
