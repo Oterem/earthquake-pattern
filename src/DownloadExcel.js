@@ -139,7 +139,7 @@ export default ({ fullData, buttonTitle, isClustered, isRandom = false }) => {
 
     });
 
-    return rowArray && rowArray.filter(obj=>obj.value);
+    return rowArray && rowArray.filter(obj=>obj.value !== undefined);
   };
 
   return (
