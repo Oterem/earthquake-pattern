@@ -11,15 +11,21 @@ let childrenData = [];
 
 export async function kuku(params){
 
+
+
     const {final,visitedEvents} = await buildGroups(params);
     return {final,visitedEvents};
 }
 
-async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows}) {
+async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows, depth}) {
     visitedEvents = {};
+    fullData = [];
     rows.forEach(row=>{
         delete row.ParentGroup;
         delete row.distanceFromParent;
+        delete row.parentId;
+        delete row.diffDays;
+
         visitedEvents[row.eventid] = {
             visited:false,
             taken:false
@@ -36,7 +42,9 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
         }
         let fetchMoreChildren = true;
         let currentEvent = event;
+        let depthCounter = 0;
         while (fetchMoreChildren) {
+            depthCounter++;
             const directChildren = findEventDirectChildren(currentEvent,latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,visitedEvents);
             if (directChildren.length) {
                 if(!_.has(data,event.eventid)){
@@ -51,12 +59,18 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
                 visitedEvents[event.eventid] = {...visitedEvents[event.eventid],taken:true}
                 const nearestEvent = _.minBy(directChildren, 'date');
                 if (nearestEvent) {
+
                     visitedEvents[nearestEvent.eventid] = {...visitedEvents[nearestEvent.eventid],taken : true}
                     nearestEvent.parentId = currentEvent.eventid
                     nearestEvent.distanceFromParent = getDistanceFromLatLonInKm(currentEvent.latitude, currentEvent.longtitude, nearestEvent.latitude, nearestEvent.longtitude);
                     nearestEvent.diffDays = diffBetweenDates(currentEvent.date, nearestEvent.date);
                     data[event.eventid].children.push(nearestEvent);
-                    currentEvent = nearestEvent;
+                    if(depthCounter === depth){
+                        fetchMoreChildren = false;
+                    } else {
+                        currentEvent = nearestEvent;
+                    }
+                    
                 } else {
                     fetchMoreChildren = false;
                 }
@@ -67,9 +81,10 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
 
 
     }
-    const z = Object.keys(data);
+    const firstId = Object.keys(data)[0];
+    const keys = Object.keys(data);
     const final = [];
-    z.forEach(key => {
+    keys.forEach(key => {
         const a = data[key];
         // if (a.children.length) {
             final.push(a);

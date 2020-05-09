@@ -11,6 +11,7 @@ import ShuffleData from './ShuffleData'
 import RunTests from './RunTests';
 import MatchGroups from './MatchGroups';
 import FilterAfterShocks from './FilterAfterShocks';
+import MatchByRegions from './MatchByRegions';
 import firebase from './firebase';
 import { Redirect } from 'react-router-dom'
 
@@ -73,12 +74,13 @@ function SimpleTabs() {
   return  (
     <div className={classes.root}>
       <AppBar position="static">
-        <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="fullWidth">
+        <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on">
           <Tab label="Build Clusters" {...a11yProps(0)} />
           <Tab  label="Shuffle data" {...a11yProps(1)} />
           <Tab  label="Match Groups" {...a11yProps(2)} />
           <Tab  label="Run Tests" {...a11yProps(3)} />
           <Tab  label="Filter aftershocks" {...a11yProps(4)} />
+          <Tab  label="Match by Regions" {...a11yProps(5)} />
         </Tabs>
       </AppBar>
       <TabPanel value={value} index={0}>
@@ -95,6 +97,9 @@ function SimpleTabs() {
       </TabPanel>
       <TabPanel value={value} index={4}>
         <FilterAfterShocks/>
+      </TabPanel>
+      <TabPanel value={value} index={5}>
+        <MatchByRegions/>
       </TabPanel>
     </div>
   );

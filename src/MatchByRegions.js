@@ -42,18 +42,36 @@ export default ({ checks }) => {
   const [rawData, setRawData] = useState([]);
   const fileInput = React.createRef();
   const [loading, setLoading] = useState(false);
+
   const [clusteredData, setClusteredData] = useState([]);
-  const [numOfClusters, setNumOfClusters] = useState(0);
-  const [totalRows, setTotalRows] = useState(0);
-  const [clusteredRows, setClusteredRows] = useState(0);
-  const [unclusteredRows, setUnclusteredRows] = useState(0);
+
   const [unclusteredEvents, setUnclusteredEvents] = useState([]);
+
+  const [clusteredDataByRegion, setClusteredDataByRegion] = useState([]);
+
+  const [unclusteredEventsByRegion, setUnclusteredEventsByRegion] = useState([]);
+
+  const [numOfClusters, setNumOfClusters] = useState(0);
+  const [numOfClustersByRegion, setNumOfClustersByRegion] = useState(0);
+
+  const [totalRows, setTotalRows] = useState(0);
+  const [totalRowsByRegion, setTotalRowsByRegion] = useState(0);
+
+  const [clusteredRows, setClusteredRows] = useState(0);
+  const [clusteredRowsByRegion, setClusteredRowsByRegion] = useState(0);
+
+
+  const [UnclusteredRows, setUnclusteredRows] = useState(0);
+  const [UnclusteredRowsByRegion, setUnclusteredRowsByRegion] = useState(0);
+
+
   const [dataRowOffset, setDataRowOffset] = useState(2);
   const [isOverride, setIsOverride] = useState(false);
   const [overrideLatitude, setOverrideLatitude] = useState(0);
   const [overrideLongitude, setOverrideLongitude] = useState(0);
   const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
   const [children, setChildren] = useState(0);
+  const [childrenByRegion, setChildrenByRegion] = useState(0);
 
   useEffect(() => {
     store.loading.set(loading);
@@ -81,44 +99,102 @@ export default ({ checks }) => {
       overrideLongitude:+overrideLongitude
     };
 
-
-    const workerParams = {
-      rows:[...excelRows],
-      latitude,
-      longitude,
-      magnitude,
-      cutOffDays,
-      distanceThreshold,
-      overrideObj,
-      cutoffDaysDirection
-    };
-    const workerInstance = worker();
-    const {final, visitedEvents} = await workerInstance.kuku(workerParams);
-    const clustered = final.filter(obj => obj.children.length);
-    setClusteredData([...clustered]);
-    const ids = Object.keys(visitedEvents);
+    let workerParams = {
+        rows:[...excelRows],
+        latitude,
+        longitude,
+        magnitude,
+        cutOffDays,
+        distanceThreshold,
+        overrideObj,
+        cutoffDaysDirection
+      };
+      const workerInstance = worker();
+      let {final, visitedEvents} = await workerInstance.kuku(workerParams);
+      const clustered = final.filter(obj => obj.children.length);
+      setClusteredData([...clustered]);
+      const ids = Object.keys(visitedEvents);
     const unclustered = [];
     ids.forEach(id=>{
-      const obj = visitedEvents[id];
-      if(obj && obj.taken ===false){
+    const obj = visitedEvents[id];
+    if(obj && obj.taken ===false){
         const objtoPush = excelRows.find(obj=>obj.eventid === +id);
         unclustered.push(objtoPush);
+    }
+    });
+      let counter = 0;
+      let childrenCount = 0;
+      clustered.forEach(row => {
+        counter += 1;
+        childrenCount += row.children.length;
+      });
+
+
+     
+      /* initial clustered*/ 
+      setClusteredData([...clustered]);
+
+      /* initial un-clustered*/
+      setUnclusteredEvents(unclustered);
+      setClusteredRows(counter);
+      setChildren(childrenCount);
+      setUnclusteredRows(unclustered.length);
+      setNumOfClusters(clustered.length);
+
+      /* by region */
+      const flattenedEvents = [];
+      clustered && clustered.forEach(cluster=>{
+        flattenedEvents.push(cluster.parent, ...cluster.children)
+      })
+      setTotalRowsByRegion(flattenedEvents.length);
+      const sorted = _.sortBy(flattenedEvents, "date");
+      workerParams = {
+        rows:[...sorted],
+        latitude,
+        longitude,
+        magnitude,
+        cutOffDays,
+        distanceThreshold,
+        overrideObj,
+        cutoffDaysDirection,
+        depth:1
+      };
+      const workerInstanceByRegion = worker();
+        const res = await workerInstanceByRegion.kuku(workerParams);
+        const finalByRegion = res.final;
+        const visitedEventsByRegion = res.visitedEvents;
+      const clusteredByRegion = finalByRegion.filter(obj => obj.children.length);
+
+       const idsByRegion = Object.keys(visitedEventsByRegion);
+      const unclusteredByRegion = [];
+      idsByRegion.forEach(id=>{
+      const obj = visitedEventsByRegion[id];
+      if(obj && obj.taken ===false){
+          const objtoPush = excelRows.find(obj=>obj.eventid === +id);
+          unclusteredByRegion.push(objtoPush);
       }
-    });
-    let counter = 0;
-    let childrenCount = 0;
-    clustered.forEach(row => {
-      counter += 1;
-      childrenCount += row.children.length;
-    });
-    setUnclusteredEvents(unclustered);
-    setClusteredRows(counter);
-    setChildren(childrenCount);
-    setUnclusteredRows(unclustered.length);
-    setNumOfClusters(clustered.length);
-  
-    setShowStatistics(true);
-    store.loading.set(false);
+      });
+
+      let counterByRegion = 0;
+      let childrenCountByRegion = 0;
+      clusteredByRegion.forEach(row => {
+        counter += 1;
+        childrenCountByRegion += row.children.length;
+      });
+      
+      /* clustered by region*/
+      setClusteredDataByRegion([...clusteredByRegion]);
+      /* un-clustered by region*/
+      setUnclusteredEventsByRegion(unclusteredByRegion);
+      
+      setClusteredRowsByRegion(clusteredByRegion.length);
+      setChildrenByRegion(childrenCountByRegion);
+      setUnclusteredRowsByRegion(unclusteredByRegion.length);
+      setNumOfClustersByRegion(clusteredByRegion.length);
+      setShowStatistics(true);
+      store.loading.set(false);
+
+
   }
 
   const handleCutoffDaysDirectionChange = (event) =>{
@@ -376,6 +452,7 @@ export default ({ checks }) => {
                 direction="row"
                 justify="center"
                 alignItems="center"
+                spacing={2}
               >
                 <GridReact item>
                   <Button
@@ -392,40 +469,89 @@ export default ({ checks }) => {
                     <DownloadExcel
                       fullData={clusteredData}
                       isClustered={true}
-                      buttonTitle={"Clustered events as excel"}
+                      buttonTitle={"Initial Clustered events as excel"}
                     />
                   ) : null}
                 </GridReact>
                 <GridReact item key={"unclustered"}>
-                  {unclusteredRows ? (
+                  {UnclusteredRows ? (
                     <DownloadExcel
                       fullData={unclusteredEvents}
                       isClustered={false}
-                      buttonTitle={"UnClustered events as excel"}
+                      buttonTitle={"Initial UnClustered events as excel"}
+                    />
+                  ) : null}
+                </GridReact>
+
+                <GridReact item key={"clusteredByRegion"}>
+                  {numOfClusters ? (
+                    <DownloadExcel
+                      fullData={clusteredDataByRegion}
+                      isClustered={true}
+                      buttonTitle={"Clustered events by region as excel"}
+                    />
+                  ) : null}
+                </GridReact>
+
+                <GridReact item key={"unclustered"}>
+                  {numOfClusters ? (
+                    <DownloadExcel
+                      fullData={unclusteredEventsByRegion}
+                      isClustered={false}
+                      buttonTitle={"UnClustered events by region as excel"}
                     />
                   ) : null}
                 </GridReact>
               </GridReact>
+
+              
+             
+
+
             </GridReact>
+
+            
           </GridReact>
+
+          
         </div>
       )}
       {showStatistics && (
         <div style={{ paddingTop: 30 }}>
+            <Typography variant="h6">Initial Build Clusters</Typography>
           <Typography variant="body2">Total events: {totalRows}</Typography>
           <Typography variant="body2">
-            Clustered events: {clusteredRows} (
+            Clustered events initial: {clusteredRows} (
             {Math.floor((clusteredRows * 100) / totalRows)})%
           </Typography>
           <Typography variant="body2">
-            Children: {children} (
+            Children initial: {children} (
             {Math.floor((children * 100) / totalRows)})%
           </Typography>
           <Typography variant="body2">
-            Unclustered events: {unclusteredRows}
+            Unclustered events initial: {UnclusteredRows}
           </Typography>
           <Typography variant="body2">
             Total Clusters: {numOfClusters}
+          </Typography>
+
+          <br/>
+          <br/>
+          <Typography variant="h6">Clusters By Regions</Typography>
+          <Typography variant="body2">Total events: {totalRowsByRegion}</Typography>
+          <Typography variant="body2">
+            Clustered events initial: {clusteredRowsByRegion} (
+            {Math.floor((clusteredRowsByRegion * 100) / totalRowsByRegion)})%
+          </Typography>
+          <Typography variant="body2">
+            Children initial: {childrenByRegion} (
+            {Math.floor((childrenByRegion * 100) / totalRowsByRegion)})%
+          </Typography>
+          <Typography variant="body2">
+            Unclustered events initial: {UnclusteredRowsByRegion}
+          </Typography>
+          <Typography variant="body2">
+            Total Clusters: {numOfClustersByRegion}
           </Typography>
         </div>
       )}
