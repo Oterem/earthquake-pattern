@@ -20,6 +20,8 @@ import OverrideSwitch from './BuildClusetrs/OverrideSwitch';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
+import Switch from '@material-ui/core/Switch';
 import worker from 'workerize-loader!./worker'; // eslint-disable-line import/no-webpack-loader-syntax
 const useStyles = makeStyles(theme => ({
   root: {
@@ -54,6 +56,7 @@ export default ({ checks }) => {
   const [overrideLongitude, setOverrideLongitude] = useState(0);
   const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
   const [children, setChildren] = useState(0);
+  const [isRotation, setIsRotation] = useState(false);
 
   useEffect(() => {
     store.loading.set(loading);
@@ -90,10 +93,12 @@ export default ({ checks }) => {
       cutOffDays,
       distanceThreshold,
       overrideObj,
-      cutoffDaysDirection
+      cutoffDaysDirection,
+      isRotation
     };
+    debugger
     const workerInstance = worker();
-    const {final, visitedEvents} = await workerInstance.kuku(workerParams);
+    const {final, visitedEvents} = await workerInstance.work(workerParams);
     const clustered = final.filter(obj => obj.children.length);
     setClusteredData([...clustered]);
     const ids = Object.keys(visitedEvents);
@@ -351,6 +356,14 @@ export default ({ checks }) => {
                     <FormControlLabel value="1" control={<Radio />} label="Up" />
                     <FormControlLabel value="0" control={<Radio />} label="Down" />
               </RadioGroup>
+            </GridReact>
+            <GridReact>
+            <FormControlLabel
+        control={<Switch checked={isRotation} onChange={event=>{
+          setIsRotation(event && event.target && event.target.checked)
+        }} />}
+        label="Rotation"
+      />
             </GridReact>
 
           </GridReact>

@@ -9,7 +9,7 @@ let fullData = [];
 let visitedChildren = {};
 let childrenData = []; 
 
-export async function kuku(params){
+export async function work(params){
 
 
 
@@ -17,7 +17,7 @@ export async function kuku(params){
     return {final,visitedEvents};
 }
 
-async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows, depth}) {
+async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows, depth, isRotation}) {
     visitedEvents = {};
     fullData = [];
     rows.forEach(row=>{
@@ -45,7 +45,7 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
         let depthCounter = 0;
         while (fetchMoreChildren) {
             depthCounter++;
-            const directChildren = findEventDirectChildren(currentEvent,latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,visitedEvents);
+            const directChildren = findEventDirectChildren(currentEvent,latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,visitedEvents,isRotation);
             if (directChildren.length) {
                 if(!_.has(data,event.eventid)){
                     data[event.eventid] = {
@@ -93,7 +93,7 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
     return {final,visitedEvents}
 }
 
-function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1,visitedEvents) {
+function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrideObj,cutoffDaysDirection=1,visitedEvents,isRotation=false) {
     const a = visitedEvents;
     const boundedDate = cutoffDaysDirection ? moment(event.date).add(cutOffDays,'d').toISOString() : moment(event.date).subtract(cutOffDays,'d').toISOString();
     let adjacentYear = fullData.filter(row=>{
@@ -102,6 +102,17 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrid
         }//direction up
         return row.date >= event.date && row.date <= boundedDate && row.eventid !== event.eventid
     });
+
+    if(isRotation){
+        const isParentLatPositive = event.latitude > 0;
+        adjacentYear = adjacentYear.filter(obj=>{
+            if(isParentLatPositive){
+                return calcIsPositiveRotation(event, obj);
+            }
+            return !calcIsPositiveRotation(event, obj);
+        });
+
+    }
     if(overrideObj.isOverride && overrideObj.overrideLatitude){
         let combinedLat
         if(event.latitude >=0){
@@ -185,7 +196,13 @@ function findEventDirectChildren (event,lat,long,mag,cutOffDays,distance,overrid
     })
 }
 
-
+function calcIsPositiveRotation(parent,child){
+    const result = (child.longtitude - parent.longtitude).toPrecision(5);
+    if(result > 0 && result < 180 || result > -360 && result < -180){
+        return true;
+    }
+    return false; 
+}
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the earth in km
