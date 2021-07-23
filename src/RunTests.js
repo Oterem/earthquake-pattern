@@ -86,7 +86,8 @@ export default ({ checks }) => {
       cutoffDaysDirection
     };
     const workerInstance = worker();
-    const {final, visitedEvents} = await workerInstance.kuku(workerParams);
+    debugger
+    const {final, visitedEvents} = await workerInstance.work(workerParams);
     const testObj = {
       id,
       totalEvents:workerParams.rows.length

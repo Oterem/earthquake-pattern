@@ -110,7 +110,7 @@ export default ({ checks }) => {
         cutoffDaysDirection
       };
       const workerInstance = worker();
-      let {final, visitedEvents} = await workerInstance.kuku(workerParams);
+      let {final, visitedEvents} = await workerInstance.work(workerParams);
       const clustered = final.filter(obj => obj.children.length);
       setClusteredData([...clustered]);
       const ids = Object.keys(visitedEvents);
@@ -160,7 +160,7 @@ export default ({ checks }) => {
         depth:1
       };
       const workerInstanceByRegion = worker();
-        const res = await workerInstanceByRegion.kuku(workerParams);
+        const res = await workerInstanceByRegion.work(workerParams);
         const finalByRegion = res.final;
         const visitedEventsByRegion = res.visitedEvents;
       const clusteredByRegion = finalByRegion.filter(obj => obj.children.length);
