@@ -74,7 +74,7 @@ function SimpleTabs() {
   return  (
     <div className={classes.root}>
       <AppBar position="static">
-        <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on">
+        <Tabs value={value} classes={{indicator:classes.tabs}} onChange={handleChange} aria-label="simple tabs example"  variant="scrollable" scrollButtons="on">
           <Tab label="Build Clusters" {...a11yProps(0)} />
           <Tab  label="Shuffle data" {...a11yProps(1)} />
           <Tab  label="Match Groups" {...a11yProps(2)} />

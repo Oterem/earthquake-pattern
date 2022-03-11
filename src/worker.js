@@ -17,7 +17,31 @@ export async function work(params){
     return {final,visitedEvents};
 }
 
-async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows, depth, isRotation}) {
+function getNearestEvent({directChildren, buildMethod, parent,depthCounter, childParentDistance}){
+    if (buildMethod === 'date' || depthCounter === 1){
+        return  _.minBy(directChildren, 'date');
+    }
+    (directChildren || []).forEach(child=>{
+        child.distanceFromParent = getDistanceFromLatLonInKm(parent.latitude, parent.longtitude, child.latitude, child.longtitude);
+    });
+    const minial =  _.minBy(directChildren, (child)=>{
+            return Math.abs(child.distanceFromParent - childParentDistance)
+    });
+    const distMap = directChildren.map(child=>{
+        return {eventid: child.eventid,distanceFromParent:child.distanceFromParent}
+    })
+    /*
+    console.log('parent', parent)
+    console.table(distMap)
+    console.log("selected ", minial.eventid, " childParentDistance ", childParentDistance)
+    console.log("========================")
+    */
+    return minial
+
+
+}
+
+async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,rows, depth, isRotation, buildMethod}) {
     visitedEvents = {};
     fullData = [];
     rows.forEach(row=>{
@@ -43,6 +67,7 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
         let fetchMoreChildren = true;
         let currentEvent = event;
         let depthCounter = 0;
+        let childParentDistance = 0;
         while (fetchMoreChildren) {
             depthCounter++;
             const directChildren = findEventDirectChildren(currentEvent,latitude,longitude,magnitude,cutOffDays,distanceThreshold,overrideObj,cutoffDaysDirection,visitedEvents,isRotation);
@@ -57,7 +82,7 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
                     }
                 }
                 visitedEvents[event.eventid] = {...visitedEvents[event.eventid],taken:true}
-                const nearestEvent = _.minBy(directChildren, 'date');
+                const nearestEvent = getNearestEvent({directChildren, buildMethod, parent:event, depthCounter, childParentDistance});
                 if (nearestEvent) {
 
                     visitedEvents[nearestEvent.eventid] = {...visitedEvents[nearestEvent.eventid],taken : true}
@@ -65,6 +90,10 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
                     nearestEvent.distanceFromParent = getDistanceFromLatLonInKm(currentEvent.latitude, currentEvent.longtitude, nearestEvent.latitude, nearestEvent.longtitude);
                     nearestEvent.diffDays = diffBetweenDates(currentEvent.date, nearestEvent.date);
                     data[event.eventid].children.push(nearestEvent);
+                    if (buildMethod === 'distance'){
+                        childParentDistance = nearestEvent.distanceFromParent
+                    }
+                    console.log('childPArentdisr', childParentDistance)
                     if(depthCounter === depth){
                         fetchMoreChildren = false;
                     } else {
@@ -78,6 +107,8 @@ async function buildGroups ({latitude,longitude,magnitude,cutOffDays,distanceThr
                 fetchMoreChildren = false;
             }
         }
+
+        console.log("*********************************")
 
 
     }

@@ -18,9 +18,11 @@ import { MyContext } from "./utils/AppContext";
 import { makeStyles } from "@material-ui/core/styles";
 import OverrideSwitch from './BuildClusetrs/OverrideSwitch';
 import Radio from '@material-ui/core/Radio';
+import FormGroup from '@material-ui/core/FormGroup';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormGroup from '@material-ui/core/FormGroup';
+import FormControl from '@material-ui/core/FormControl';
+import FormLabel from '@material-ui/core/FormLabel';
 import Switch from '@material-ui/core/Switch';
 import worker from 'workerize-loader!./worker'; // eslint-disable-line import/no-webpack-loader-syntax
 const useStyles = makeStyles(theme => ({
@@ -57,6 +59,7 @@ export default ({ checks }) => {
   const [cutoffDaysDirection, setCutoffDaysDirection] = useState(1);
   const [children, setChildren] = useState(0);
   const [isRotation, setIsRotation] = useState(false);
+  const [buildMethod, setBuildMethod] = useState("date");
 
   useEffect(() => {
     store.loading.set(loading);
@@ -94,9 +97,9 @@ export default ({ checks }) => {
       distanceThreshold,
       overrideObj,
       cutoffDaysDirection,
-      isRotation
+      isRotation,
+      buildMethod
     };
-    debugger
     const workerInstance = worker();
     const {final, visitedEvents} = await workerInstance.work(workerParams);
     const clustered = final.filter(obj => obj.children.length);
@@ -364,6 +367,18 @@ export default ({ checks }) => {
         }} />}
         label="Rotation"
       />
+            </GridReact>
+
+            <GridReact>
+            <FormControl component="fieldset">
+  <FormLabel component="legend">Build Method</FormLabel>
+  <RadioGroup aria-label="gender" name="gender1" value={buildMethod} onChange={(event)=>{
+    setBuildMethod(event.target.value)
+  }}>
+    <FormControlLabel value="date" control={<Radio />} label="By Date" />
+    <FormControlLabel value="distance" control={<Radio />} label="By Distance" />
+  </RadioGroup>
+</FormControl>
             </GridReact>
 
           </GridReact>
